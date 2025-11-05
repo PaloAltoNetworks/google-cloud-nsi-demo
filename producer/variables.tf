@@ -51,7 +51,7 @@ variable "image_name" {
 
 variable "machine_type" {
   description = "The machine type for the firewalls (n2 or e2 recommended)."
-  default     = "n2-standard-4"
+  default     = "n2-standard-8"
   type        = string
 }
 
