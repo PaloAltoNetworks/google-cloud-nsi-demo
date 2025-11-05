@@ -1,4 +1,4 @@
-# Software NGFW with Network Security Integration
+# Software NGFW with Network Security Integration Demo Tutorial
 
 This tutorial shows how to deploy Palo Alto Networks Software Firewalls in Google Cloud, utilizing either the *in-line* or *out-of-band* deployment model within the [Network Security Integration](https://cloud.google.com/network-security-integration/docs/nsi-overview) (NSI).  NSI enables you to gain  visibility and security for your VPC network traffic, without requiring any changes to your network infrastructure.  
 
