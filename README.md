@@ -284,30 +284,13 @@ Create an intercept deployment for the zone you wish to inspect traffic (`$ZONE`
 
 <br>
 
-### Configure Firewall
+### Access the Firewall
 
-Access the firewall's CLI and enable Geneve encapsulation.  Then, apply a baseline configuration to the firewall to pass the load balancer's health checks and to allow traffic from the consumer networks.
 
 > [!IMPORTANT]
-> For this tutorial, the firewalls are bootstrapped only with a threat update to enable threat inspection. For production environments, all  steps below can be fully automated via [bootstrapping](https://docs.paloaltonetworks.com/vm-series/11-1/vm-series-deployment/bootstrap-the-vm-series-firewall/prepare-the-bootstrap-package) to simplify management.
+> For this tutorial, the firewalls are bootstrapped with sample configuration and only with a threat update to enable threat inspection. For production environments, all  steps below can be fully automated via [bootstrapping](https://docs.paloaltonetworks.com/vm-series/11-1/vm-series-deployment/bootstrap-the-vm-series-firewall/prepare-the-bootstrap-package) to simplify management.
 
 <br>
-
-#### Access the Firewall
-
-1. In Cloud Shell, set the firewall’s name and zone to environment variables (`FW_NAME` and `FW_ZONE`).
-
-    ```
-    read FW_NAME FW_ZONE <<< $(gcloud compute instances list \
-        --filter="tags.items=panw-tutorial" \
-        --format="value(name, zone)")
-    ```
-
-2. SSH to the firewall.
-
-    ```
-    gcloud compute ssh admin@$FW_NAME --zone=$FW_ZONE
-    ```
 
 > [!WARNING]
 > After applying the terraform plan, it can take ~10 minutes for the firewall to become available. 
