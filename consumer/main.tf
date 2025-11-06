@@ -242,7 +242,7 @@ module "gke" {
 
 data "google_container_cluster" "main" {
   name     = module.gke.name
-  location = data.google_compute_zones.available.names[1]
+  location = data.google_compute_zones.available.names[0]
 }
 
 

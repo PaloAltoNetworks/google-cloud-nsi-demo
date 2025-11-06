@@ -225,11 +225,11 @@ In the `producer` directory, use the terraform plan to create the producer's VPC
 
     <pre>
     export <b>PRODUCER_PROJECT</b>=<i>your-project-id</i>
-    export <b>DATA_VPC</b>=<i>data</i>
+    export <b>DATA_VPC</b>=<i>nsi-data</i>
     export <b>DATA_SUBNET</b>=<i>us-west1-data</i>
     export <b>REGION</b>=<i>us-west1</i>
     export <b>ZONE</b>=<i>us-west1-a</i>
-    export <b>BACKEND_SERVICE</b>=<i>https://www.googleapis.com/compute/v1/projects/your-project-id/regions/us-west1/backendServices/panw-lb</i></pre>
+    export <b>BACKEND_SERVICE</b>=<i>https://www.googleapis.com/compute/v1/projects/your-project-id/regions/us-west1/backendServices/panw-nsi-lb</i></pre>
 
 7. **Copy-and-paste** the `ENVIRONMENT_VARIABLES` output into Cloud Shell to set environment variables.
 
@@ -245,10 +245,10 @@ Create an intercept deployment for the zone you wish to inspect traffic (`$ZONE`
 
 1. ***Out-of-Band Deployment Only:*** Go to [Create Mirroring Deployment & Deployment Group](docs/oob_producer.md#create-mirroing-deployment--deployment-group).
 
-2. Create an intercept deployment group (`panw-dg`) within the firewall’s `data-vpc`.
+2. Create an intercept deployment group (`panw-nsi-dg`) within the firewall’s `data-vpc`.
 
     ```
-    gcloud beta network-security intercept-deployment-groups create panw-dg \
+    gcloud beta network-security intercept-deployment-groups create panw-nsi-dg \
         --location global \
         --project $PRODUCER_PROJECT \
         --network $DATA_VPC \
@@ -275,9 +275,17 @@ Create an intercept deployment for the zone you wish to inspect traffic (`$ZONE`
         --location $ZONE \
         --forwarding-rule panw-lb-rule-$ZONE \
         --forwarding-rule-location $REGION \
-        --intercept-deployment-group projects/$PRODUCER_PROJECT/locations/global/interceptDeploymentGroups/panw-dg \
+        --intercept-deployment-group projects/$PRODUCER_PROJECT/locations/global/interceptDeploymentGroups/panw-nsi-dg \
         --no-async
     ```
+5. Show the intercept-deployments (`panw-deployment-$ZONE`) to ensure the status is active.
+   ```
+   gcloud beta network-security intercept-deployments list
+   ```
+   The output expected like:
+   <pre>
+    ID                          LOCATION    STATE
+    panw-deployment-us-west1-a  us-west1-a  ACTIVE</pre>
 
 > [!TIP]
 > In this tutorial, all of the consumer resources are in one zone, requiring only one intercept deployment. For multiple zones, repeat steps **3-4** for each zone requiring inspection. 
@@ -327,11 +335,13 @@ Create an intercept deployment for the zone you wish to inspect traffic (`$ZONE`
     <pre>
     https://<b><i>MGMT_ADDRESS</i></b></pre>
     Username:
-    <pre>
-    admin</pre>
+    ```
+    admin
+    ```
     Password:
-    <pre>
-    PaloAlto@123</pre>
+    ```
+    PaloAlto@123
+    ```
 ---
 
 <br>
@@ -396,21 +406,22 @@ Create an intercept *endpoint* and *endpoint group* and associate it with the pr
 
 1. ***Out-of-Band Deployment Only:*** Go to [Create Mirroring Endpoint & Endpoint Group](docs/oob_consumer.md#create-mirroring-endpoint--endpoint-group).
 
-2. Create an intercept endpoint group (`pan-epg`) referencing the producer's deployment group (`pan-dg`).
+2. Create an intercept endpoint group (`pan-nsi-epg`) referencing the producer's deployment group (`pan-nsi-dg`).
 
     ```
-    gcloud beta network-security intercept-endpoint-groups create panw-epg \
-        --intercept-deployment-group panw-dg \
+    gcloud beta network-security intercept-endpoint-groups create panw-nsi-epg \
+        --intercept-deployment-group projects/$PRODUCER_PROJECT/locations/global/interceptDeploymentGroups/panw-nsi-dg \
         --project $CONSUMER_PROJECT \
         --location global \
         --no-async
+
     ```
 
 3. Associate the intercept endpoint group with your consumer’s VPC network.
 
     ```
-    gcloud beta network-security intercept-endpoint-group-associations create panw-epg-assoc \
-        --intercept-endpoint-group panw-epg \
+    gcloud beta network-security intercept-endpoint-group-associations create panw-nsi-epg-assoc \
+        --intercept-endpoint-group panw-nsi-epg \
         --network $CONSUMER_VPC \
         --project $CONSUMER_PROJECT \
         --location global \
@@ -423,21 +434,21 @@ Create an intercept *endpoint* and *endpoint group* and associate it with the pr
 
 Create a `custom-intercept` security profile group, configure a network firewall policy with rules that use this group as the `ACTION`, and finally, associate the network firewall policy with your `consumer-vpc` network. 
 
-1. Create `custom-intercept` security profile (`pan-sp`) referencing the intercept endpoint group (`panw-epg`).  
+1. Create `custom-intercept` security profile (`pan-nsi-sp`) referencing the intercept endpoint group (`panw-nsi-epg`).  
 
     ```
-    gcloud beta network-security security-profiles custom-intercept create panw-sp \
-        --intercept-endpoint-group panw-epg \
+    gcloud beta network-security security-profiles custom-intercept create panw-nsi-sp \
+        --intercept-endpoint-group panw-nsi-epg \
         --billing-project $CONSUMER_PROJECT \
         --organization $ORG_ID \
         --location global
     ```
 
-2. Add the security profile to a security profile group (`pan-spg`).
+2. Add the security profile to a security profile group (`pan-nsi-spg`).
 
     ```
-    gcloud beta network-security security-profile-groups create panw-spg \
-        --custom-intercept-profile panw-sp \
+    gcloud beta network-security security-profile-groups create panw-nsi-spg \
+        --custom-intercept-profile panw-nsi-sp \
         --billing-project $CONSUMER_PROJECT \
         --organization $ORG_ID \
         --location global
@@ -463,7 +474,7 @@ Create a `custom-intercept` security profile group, configure a network firewall
         --src-ip-ranges 0.0.0.0/0 \
         --dest-ip-ranges 0.0.0.0/0 \
         --direction INGRESS  \
-        --security-profile-group organizations/$ORG_ID/locations/global/securityProfileGroups/panw-spg
+        --security-profile-group organizations/$ORG_ID/locations/global/securityProfileGroups/panw-nsi-spg
 
     gcloud beta compute network-firewall-policies rules create 11 \
         --project $CONSUMER_PROJECT \
@@ -474,7 +485,7 @@ Create a `custom-intercept` security profile group, configure a network firewall
         --src-ip-ranges 0.0.0.0/0 \
         --dest-ip-ranges 0.0.0.0/0 \
         --direction EGRESS \
-        --security-profile-group organizations/$ORG_ID/locations/global/securityProfileGroups/panw-spg
+        --security-profile-group organizations/$ORG_ID/locations/global/securityProfileGroups/panw-nsi-spg
     ```
 
 5. Associate the network firewall policy to the `consumer-vpc` network.  
