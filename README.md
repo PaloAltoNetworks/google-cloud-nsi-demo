@@ -308,7 +308,7 @@ Create an intercept deployment for the zone you wish to inspect traffic (`$ZONE`
 1. In Cloud Shell, retrieve the health status of the load balancer’s forwarding rules. 
 
     ```
-    gcloud compute backend-services get-health panw-lb \
+    gcloud compute backend-services get-health nsi-panw-lb \
         --region=$REGION \
         --format="json(status.healthStatus[].forwardingRuleIp,status.healthStatus[].healthState)"
     ```
@@ -607,7 +607,57 @@ Pod-to-pod traffic within a cluster can also be inspected by the firewalls using
 > The traffic logs should now be sourced from the pod CIDR `10.20.0.0/16` rather than the node range.  This capability gives you the necessary context to begin applying security policy at the pod level where you can leverage the Kubernetes plugin for additional automation enforcement. 
 
 ---
+### Decryption
+1. Login into the NGFW, go to Policies -> Decryption, select the grey out decryption policy and enable it by click "Enable" in the Bottom.
 
+    ![alt text](images/decryption.png)
+    ![alt text](images/enable.png)
+2. Commit the confgiruation change.
+    <img src="images/commit.png" width="70%">
+3. Run below script to download two malware into the **Client-VM** using HTTPS which would need decryption function to inspect the encrypted traffic.
+
+    ```
+    gcloud compute ssh $CLIENT_VM \
+    --project $CONSUMER_PROJECT \
+    --zone $ZONE \
+    --tunnel-through-iap \
+    --command="bash -s" << 'EOF'
+    wget https://secure.eicar.org/eicar.com.txt
+    wget https://wildfire.paloaltonetworks.com/publicapi/test/pe
+    EOF
+    ```
+
+    The output looks like below failed message:
+    <pre>
+    --2025-11-06 05:50:54--  https://secure.eicar.org/eicar.com.txt
+    Resolving secure.eicar.org (secure.eicar.org)... 89.238.73.97, 2a00:1828:1000:2497::2
+    Connecting to secure.eicar.org (secure.eicar.org)|89.238.73.97|:443... connected.
+    HTTP request sent, awaiting response... 503 Service Unavailable
+    2025-11-06 05:50:55 ERROR 503: Service Unavailable.
+
+    --2025-11-06 05:50:55--  https://wildfire.paloaltonetworks.com/publicapi/test/pe
+    Resolving wildfire.paloaltonetworks.com (wildfire.paloaltonetworks.com)... 104.199.115.54
+    Connecting to wildfire.paloaltonetworks.com (wildfire.paloaltonetworks.com)|104.199.115.54|:443... connected.
+    HTTP request sent, awaiting response... 200 OK
+    Length: 55296 (54K) [application/octet-stream]
+    Saving to: ‘pe’
+
+    0K .......... .......... .......... .......... .......    88% 12.5M=0.004s
+
+    2025-11-06 05:50:55 (12.5 MB/s) - Read error at byte 48865/55296 (Connection reset by peer). Retrying.
+
+    --2025-11-06 05:50:56--  (try: 2)  https://wildfire.paloaltonetworks.com/publicapi/test/pe
+    Connecting to wildfire.paloaltonetworks.com (wildfire.paloaltonetworks.com)|104.199.115.54|:443... connected.
+    HTTP request sent, awaiting response... 200 OK
+    Length: 55296 (54K) [application/octet-stream]
+    Saving to: ‘pe’
+
+    0K .......... .......... .......... .......... .......    88% 9.95M=0.005s
+
+    2025-11-06 05:50:56 (9.95 MB/s) - Read error at byte 48865/55296 (Connection reset by peer). Retrying. </pre>
+5. Go the NGFW console, in the **Monitor** tab, **Logs** -> **Threat**, you will find the block logs:
+    ![alt text](images/threat.png)
+---    
 <br>
 
 ## Delete Resources
@@ -629,22 +679,22 @@ Pod-to-pod traffic within a cluster can also be inspected by the firewalls using
         --project=$CONSUMER_PROJECT \
         --global
 
-    gcloud beta network-security security-profile-groups delete panw-spg \
+    gcloud beta network-security security-profile-groups delete panw-nsi-spg \
         --organization $ORG_ID \
         --location=global \
         --quiet
 
-    gcloud beta network-security security-profiles custom-intercept delete panw-sp \
+    gcloud beta network-security security-profiles custom-intercept delete panw-nsi-sp \
         --organization $ORG_ID \
         --location=global \
         --quiet
 
-    gcloud beta network-security intercept-endpoint-group-associations delete panw-epg-assoc \
+    gcloud beta network-security intercept-endpoint-group-associations delete panw-nsi-epg-assoc \
         --project $CONSUMER_PROJECT \
         --location global \
         --no-async
 
-    gcloud beta network-security intercept-endpoint-groups delete panw-epg \
+    gcloud beta network-security intercept-endpoint-groups delete panw-nsi-epg \
         --project $CONSUMER_PROJECT \
         --location global \
         --no-async
@@ -669,19 +719,11 @@ Pod-to-pod traffic within a cluster can also be inspected by the firewalls using
 2. Delete the intercept deployment, forwarding rule, and intercept deployment group.
 
     ```
-    gcloud beta network-security intercept-deployments delete panw-deployment-$ZONE \
-        --location $ZONE \
-        --no-async
+    gcloud beta network-security intercept-deployments delete panw-deployment-$ZONE --location=$ZONE 
     
-    gcloud compute forwarding-rules delete panw-lb-rule-$ZONE \
-        --project $PRODUCER_PROJECT \
-        --region $REGION \
-        --quiet
+    gcloud compute forwarding-rules delete panw-lb-rule-$ZONE --region=us-west1
 
-    gcloud beta network-security intercept-deployment-groups delete panw-dg \
-        --location global \
-        --project $PRODUCER_PROJECT \
-        --no-async
+    gcloud beta network-security intercept-deployment-groups delete panw-nsi-dg  --project $PRODUCER_PROJECT  --location global
     ```
 
 3. Run `terraform destroy` from the `/producer` directory.
