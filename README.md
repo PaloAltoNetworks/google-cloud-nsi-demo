@@ -608,12 +608,18 @@ Pod-to-pod traffic within a cluster can also be inspected by the firewalls using
 
 ---
 ### Decryption
-1. Login into the NGFW, go to Policies -> Decryption, select the grey out decryption policy and enable it by click "Enable" in the Bottom.
+
+This section describes how to enable SSL decryption on the firewall to gain visibility into encrypted traffic.
+
+1. Login into the NGFW, go to **Policies** -> **Decryption**, select the grey out decryption policy and enable it by click **"Enable"** in the Bottom.
 
     ![alt text](images/decryption.png)
     ![alt text](images/enable.png)
-2. Commit the confgiruation change.
+
+2. **Commit** the confgiruation change.
+
     <img src="images/commit.png" width="70%">
+
 3. Run below script to download two malware into the **Client-VM** using HTTPS which would need decryption function to inspect the encrypted traffic.
 
     ```
@@ -627,7 +633,7 @@ Pod-to-pod traffic within a cluster can also be inspected by the firewalls using
     EOF
     ```
 
-    The output looks like below failed message:
+    The output looks like **below** failed message:
     <pre>
     --2025-11-06 05:50:54--  https://secure.eicar.org/eicar.com.txt
     Resolving secure.eicar.org (secure.eicar.org)... 89.238.73.97, 2a00:1828:1000:2497::2
@@ -656,6 +662,7 @@ Pod-to-pod traffic within a cluster can also be inspected by the firewalls using
 
     2025-11-06 05:50:56 (9.95 MB/s) - Read error at byte 48865/55296 (Connection reset by peer). Retrying. </pre>
 5. Go the NGFW console, in the **Monitor** tab, **Logs** -> **Threat**, you will find the block logs:
+
     ![alt text](images/threat.png)
 ---    
 <br>
