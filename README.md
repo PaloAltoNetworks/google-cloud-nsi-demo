@@ -177,7 +177,7 @@ In the `producer` directory, use the terraform plan to create the producer's VPC
 1. In [Cloud Shell](https://shell.cloud.google.com), clone the repository change to the `producer` directory. 
 
     ```
-    git clone https://github.com/PaloAltoNetworks/google-cloud-nsi-tutorial
+    git clone https://github.com/PaloAltoNetworks/google-cloud-nsi-demo.git
     cd google-cloud-nsi-tutorial/producer
     ```
 
