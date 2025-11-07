@@ -357,7 +357,7 @@ In the `consumer` directory, use the terraform plan to create a consumer environ
 
     ```
     cd
-    cd google-cloud-nsi-tutorial/consumer
+    cd google-cloud-nsi-demo/consumer
     ```
 
 2. Create a `terraform.tfvars`
