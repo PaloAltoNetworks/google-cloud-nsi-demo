@@ -178,7 +178,7 @@ In the `producer` directory, use the terraform plan to create the producer's VPC
 
     ```
     git clone https://github.com/PaloAltoNetworks/google-cloud-nsi-demo.git
-    cd google-cloud-nsi-tutorial/producer
+    cd google-cloud-nsi-demo/producer
     ```
 
 2. Create a `terraform.tfvars`.
